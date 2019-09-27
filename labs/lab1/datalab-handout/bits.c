@@ -201,7 +201,13 @@ int tmax(void) {
  *  Rating: 2
  */
 int byteSwap(int x, int n, int m) {
-    return x>>2;
+    int y = 0;
+    n = n<<3; // n == n*3
+    m = m<<3; //m == n*3
+    y = 0xff & ((x>>n) ^ (x>>m)); // 1111 1111
+    x = x ^ (y<<n); 
+    x = x ^ (y<<m);
+    return x;
 }
 /* 
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -211,7 +217,11 @@ int byteSwap(int x, int n, int m) {
  *   Rating: 2
  */
 int isPositive(int x) {
-  return 2;
+
+  //check if number is negative and shift bits to add 00 to work on any system
+  //check if number is 0 
+  //! the result to return 1 for positive and 0 for negative
+  return !((x & (1<<31)) | !x);
 }
 /* 
  * sign - return 1 if positive, 0 if zero, and -1 if negative
@@ -222,7 +232,10 @@ int isPositive(int x) {
  *  Rating: 2
  */
 int sign(int x) {
-    return 2;
+    // if negative the shift should return all 1111111..1 which would be -1. = -1
+    // if positive the shift would make the value 0, but !!x would return 1. =  1
+    // if 0 then the shift would make the value 0 and !!x would still be 0.  =  0
+    return (x>>31) | (!!x); 
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -233,7 +246,15 @@ int sign(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+
+    // mask = 0xAAAAAAAA where all odds places are 1 (1010101010101010)
+    int mask = (0xAA << 8) + 0xAA;
+    mask = (mask << 16) + mask;
+
+    // x & masker : find the places where they both match up
+    // Xor : if they are all the same it would result in all 0 so that ! would make the resulting value 1
+    // 0 if not the same
+    return !((x & mask) ^ mask);
 }
 //3
 /* 
@@ -245,8 +266,15 @@ int allOddBits(int x) {
  *   Max ops: 10
  *   Rating: 3
  */
-int replaceByte(int x, int n, int c) {
-  return 2;
+int replaceByte(int x, int n, int c) { //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  //Store whole byte n in a by shifting by 3
+	//Mask of 1's that shifts by a byte
+	//Shift bytes and replace with the byte c that you wanted to add
+	//by using mask and OR
+	int a= n << 3;
+	int masker= 0xFF << a;
+	int shifter = c << a;
+	return (x & ~masker) | shifter;
 }
 /* 
  * isGreater - if x > y  then return 1, else return 0 
@@ -256,7 +284,15 @@ int replaceByte(int x, int n, int c) {
  *   Rating: 3
  */
 int isGreater(int x, int y) {
-  return 2;
+  //Value is 1 if x > y, assuming signs are not involved in the considerations.
+  int value = !((x + ~y) >> 31);
+  //The sign bits of x and y need to be isolated to augment the above definition
+  //of the operation. If x is positive but y is negative, 1 will be returned
+  //regardless of what the above value is. Otherwise the value will be returned
+  //as long as x isn't negative concurrently with y being positive.
+  x = x >> 31;
+  y = y >> 31;
+  return (!x & y) | (value & (!x | y));
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
@@ -267,7 +303,7 @@ int isGreater(int x, int y) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-  return 2;
+  return (x >> n) ^ (((x & (1 << 31)) >> n) << 1);
 }
 /*
  * satMul2 - multiplies by 2, saturating to Tmin or Tmax if overflow
@@ -279,7 +315,14 @@ int logicalShift(int x, int n) {
  *   Rating: 3
  */
 int satMul2(int x) {
-  return 2;
+  int TMin = 0x1<<31;
+  int TMax = ~TMin;
+  int xSign = x >> 31;
+
+  int doubleX = x + x;
+  int overflown = (x ^ doubleX) >> 31;
+  int saturated =  (xSign ^ TMax) & overflown;
+  return (~overflown & doubleX) | saturated;
 }
 //4
 /*
@@ -291,7 +334,23 @@ int satMul2(int x) {
  *   Rating: 4
  */
 int bitReverse(int x) {
-    return 2;
+      int _0x5555     = (0x55 << 8) + 0x55;                               // 2 ops
+    int _0x3333     = (0x33 << 8) + 0x33;                               // 2 ops
+    int _0x0F0F     = (0x0F << 8) + 0x0F;                               // 2 ops
+
+    int _0x55555555 = (_0x5555 << 16) + _0x5555;                        // 2 ops
+    int _0x33333333 = (_0x3333 << 16) + _0x3333;                        // 2 ops
+    int _0x0F0F0F0F = (_0x0F0F << 16) + _0x0F0F;                        // 2 ops
+    int _0x00FF00FF = (0xFF << 16) + 0xFF;                              // 2 ops
+    int _0x0000FFFF = (0xFF <<  8) + 0xFF;                              // 2 ops
+
+    x = ((x >> 1) & _0x55555555) | ((x & _0x55555555) << 1);            // 5 ops
+    x = ((x >> 2) & _0x33333333) | ((x & _0x33333333) << 2);            // 5 ops
+    x = ((x >> 4) & _0x0F0F0F0F) | ((x & _0x0F0F0F0F) << 4);            // 5 ops
+    x = ((x >> 8) & _0x00FF00FF) | ((x & _0x00FF00FF) << 8);            // 5 ops
+    x = ((x >> 16) & _0x0000FFFF) | (x << 16);                          // 4 ops
+
+    return x;
 }
 /* 
  * absVal - absolute value of x
@@ -302,7 +361,11 @@ int bitReverse(int x) {
  *   Rating: 4
  */
 int absVal(int x) {
-  return 2;
+  int mask, ret;
+  mask = x >> 31;
+  ret = x + mask;
+  ret = ret ^ mask;
+  return ret;
 }
 //float
 /* 
@@ -317,7 +380,16 @@ int absVal(int x) {
  *   Rating: 2
  */
 unsigned floatAbsVal(unsigned uf) {
-  return 2;
+  unsigned mask = 0x7FFFFFFF; 
+  //use to check NaN  
+  unsigned nan = 0x7F800001; 
+  // set sign bit to 0
+  unsigned result = uf & mask;   
+
+  // check if NaN
+  if (result >= nan)
+    return uf;
+  return result;
 }
 /* 
  * floatInt2Float - Return bit-level equivalent of expression (float) x
