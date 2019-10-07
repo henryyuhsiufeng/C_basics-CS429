@@ -64,4 +64,24 @@ Registers are used to pass in parameters. Once the first 6 arguments are filled,
 # Effects on the State
 What effects does addq %rsi, %rdi have on the state?
 - The program counter increases by 2 because it is a two byte instruction. 
-- <--- anything else????????
+- Set contents of %rdi to the sum of the current contesnts of %rsi and %rdi.
+- Set condition codes based on the result of the sum.
+    - OF: iff the result causes an overflow.
+    - ZF: iff the result is zero.
+    - SF: iff the result is negative
+There is no effect the memory or status flag. (Need clarification on why?)
+
+# Y86 Program Stack
+- Region of memory holding program data. 
+- Used in Y86 (and x86-64) for supporting procedure calls.
+- Stack top is indicated by %rsp, address of top stack element.
+- Stack grows toward lower addresses.
+    - Top element is at lowest address in the stack.
+    - When pushing, must first decrement stack pointer.
+    - When popping, increment stack pointer. 
+
+# Status Conditions
+- AOK 1 Normal operation
+- HLT 2 Halt
+- ADR 3 Bad adress
+- INS 4 Invalid instruction
