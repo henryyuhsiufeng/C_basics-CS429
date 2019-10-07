@@ -63,6 +63,5 @@ Registers are used to pass in parameters. Once the first 6 arguments are filled,
 
 # Effects on the State
 What effects does addq %rsi, %rdi have on the state?
-    - The program counter increases by 2 because it is a two byte instruction. 
-    - <--- anything else????????
-    
+- The program counter increases by 2 because it is a two byte instruction. 
+- <--- anything else????????
